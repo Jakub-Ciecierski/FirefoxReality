@@ -13,6 +13,8 @@
 #include "GestureDelegate.h"
 
 #include <memory>
+#include <functional>
+#include <jni.h>
 
 namespace crow {
 
@@ -22,15 +24,20 @@ typedef std::shared_ptr<DeviceDelegate> DeviceDelegatePtr;
 class ImmersiveDisplay;
 typedef std::shared_ptr<ImmersiveDisplay> ImmersiveDisplayPtr;
 
+class VRLayer;
+typedef std::shared_ptr<VRLayer> VRLayerPtr;
+class VRLayerQuad;
+typedef std::shared_ptr<VRLayerQuad> VRLayerQuadPtr;
+
 
 class ImmersiveDisplay {
 public:
   virtual void SetDeviceName(const std::string& aName) = 0;
   virtual void SetCapabilityFlags(const device::CapabilityFlags aFlags) = 0;
   virtual void SetFieldOfView(const device::Eye aEye, const double aLeftDegrees,
-                      const double aRightDegrees,
-                      const double aTopDegrees,
-                      const double aBottomDegrees) = 0;
+                              const double aRightDegrees,
+                              const double aTopDegrees,
+                              const double aBottomDegrees) = 0;
   virtual void SetEyeOffset(const device::Eye aEye, const float aX, const float aY, const float aZ) = 0;
   virtual void SetEyeResolution(const int32_t aWidth, const int32_t aHeight) = 0;
   virtual void CompleteEnumeration() = 0;
@@ -55,6 +62,8 @@ public:
   virtual void StartFrame() = 0;
   virtual void BindEye(const device::Eye aWhich) = 0;
   virtual void EndFrame(bool aDiscard = false) = 0;
+  virtual VRLayerQuadPtr CreateQuadLayer(int32_t aWidth, int32_t aHeight) { return nullptr; }
+  virtual void DeleteLayer(const VRLayerPtr& aLayer) {};
 protected:
   DeviceDelegate() {}
 

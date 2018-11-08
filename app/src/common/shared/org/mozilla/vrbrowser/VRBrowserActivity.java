@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.Pair;
 import android.view.KeyEvent;
+import android.view.Surface;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -422,6 +423,31 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
 
     @Keep
     @SuppressWarnings("unused")
+    void dispatchCreateWidgetSF(final int aHandle, final Surface aSurface, final int aWidth, final int aHeight) {
+        runOnUiThread(() -> {
+            final Widget widget = mWidgets.get(aHandle);
+            if (widget == null) {
+                Log.e(LOGTAG, "Widget " + aHandle + " not found");
+                return;
+            }
+
+            widget.setSurface(aSurface, aWidth, aHeight);
+            if (!widget.getFirstDraw()) {
+                widget.setFirstDraw(true);
+                updateWidget(widget);
+            }
+            View view = (View) widget;
+            // Add widget to a virtual display for invalidation
+            if (aSurface != null && view.getParent() == null) {
+                mWidgetContainer.addView(view, new FrameLayout.LayoutParams(aWidth, aHeight));
+            } else if (aSurface == null && view.getParent() != null) {
+                mWidgetContainer.removeView(view);
+            }
+        });
+    }
+
+    @Keep
+    @SuppressWarnings("unused")
     void handleMotionEvent(final int aHandle, final int aDevice, final boolean aPressed, final float aX, final float aY) {
         runOnUiThread(() -> {
             Widget widget = mWidgets.get(aHandle);
@@ -656,7 +682,7 @@ public class VRBrowserActivity extends PlatformActivity implements WidgetManager
             params.width = textureWidth;
             params.height = textureHeight;
             ((View)aWidget).setLayoutParams(params);
-            aWidget.resizeSurfaceTexture(textureWidth, textureHeight);
+            aWidget.resizeSurface(textureWidth, textureHeight);
         }
 
         boolean visible = aWidget.getPlacement().visible;

@@ -72,6 +72,7 @@ public class BrowserWidget extends View implements Widget, SessionStore.SessionC
         aPlacement.translationZ = WidgetPlacement.unitFromMeters(context, R.dimen.browser_world_z);
         aPlacement.anchorX = 0.5f;
         aPlacement.anchorY = 0.0f;
+        aPlacement.visible = true;
     }
 
     public void pauseCompositor() {
@@ -125,10 +126,33 @@ public class BrowserWidget extends View implements Widget, SessionStore.SessionC
     }
 
     @Override
-    public void resizeSurfaceTexture(final int aWidth, final int aHeight) {
+    public void setSurface(Surface aSurface, final int aWidth, final int aHeight) {
+        GeckoSession session = SessionStore.get().getSession(mSessionId);
+        if (session == null) {
+            return;
+        }
         mWidth = aWidth;
         mHeight = aHeight;
-        mSurfaceTexture.setDefaultBufferSize(aWidth, aHeight);
+        mSurface = aSurface;
+        if (mDisplay == null) {
+            mDisplay = session.acquireDisplay();
+        } else {
+            Log.e(LOGTAG, "GeckoDisplay was not null in BrowserWidget.setSurfaceTexture()");
+        }
+        if (mSurface != null) {
+            mDisplay.surfaceChanged(mSurface, aWidth, aHeight);
+        } else {
+            mDisplay.surfaceDestroyed();
+        }
+    }
+
+    @Override
+    public void resizeSurface(final int aWidth, final int aHeight) {
+        mWidth = aWidth;
+        mHeight = aHeight;
+        if (mSurfaceTexture != null) {
+            mSurfaceTexture.setDefaultBufferSize(aWidth, aHeight);
+        }
         mDisplay.surfaceChanged(mSurface, aWidth, aHeight);
     }
 

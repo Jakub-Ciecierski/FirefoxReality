@@ -7,6 +7,7 @@ package org.mozilla.vrbrowser.ui.widgets;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -295,7 +296,11 @@ public class NavigationBarWidget extends UIWidget implements GeckoSession.Naviga
         aPlacement.parentAnchorX = 0.5f;
         aPlacement.parentAnchorY = 0.0f;
         aPlacement.translationY = -35;
-        aPlacement.opaque = false;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
     }
 
     public void setBrowserWidget(BrowserWidget aWidget) {

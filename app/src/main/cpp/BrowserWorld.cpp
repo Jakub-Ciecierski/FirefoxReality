@@ -17,6 +17,7 @@
 #include "Widget.h"
 #include "WidgetPlacement.h"
 #include "VRBrowser.h"
+#include "VRLayer.h"
 #include "vrb/CameraSimple.h"
 #include "vrb/Color.h"
 #include "vrb/ConcreteClass.h"
@@ -429,7 +430,7 @@ BrowserWorld::RegisterDeviceDelegate(DeviceDelegatePtr aDelegate) {
   m.device = aDelegate;
   if (m.device) {
     m.device->RegisterImmersiveDisplay(m.externalVR);
-    m.device->SetClearColor(vrb::Color(0.0f, 0.0f, 0.0f));
+    m.device->SetClearColor(vrb::Color(0.0f, 0.0f, 0.0f, 0.0f));
     m.leftCamera = m.device->GetCamera(device::Eye::Left);
     m.rightCamera = m.device->GetCamera(device::Eye::Right);
     ControllerDelegatePtr delegate = m.controllers;
@@ -508,7 +509,7 @@ BrowserWorld::InitializeJava(JNIEnv* aEnv, jobject& aActivity, jobject& aAssetMa
     }
 #if !defined(SNAPDRAGONVR)
     m.skybox = CreateSkyBox(skyboxPath.c_str());
-    m.rootOpaqueParent->AddNode(m.skybox);
+    //m.rootOpaqueParent->AddNode(m.skybox);
     // Don't load the env model, we are going for skyboxes in v1.0
 //    CreateFloor();
 #endif
@@ -686,11 +687,21 @@ BrowserWorld::AddWidget(int32_t aHandle, const WidgetPlacementPtr& aPlacement) {
     worldWidth = aPlacement->width * kWorldDPIRatio;
   }
 
-  WidgetPtr widget = Widget::Create(m.context,
-                                    aHandle,
-                                    (int32_t)(ceilf(aPlacement->width * aPlacement->density)),
-                                    (int32_t)(ceilf(aPlacement->height * aPlacement->density)),
-                                    worldWidth);
+  int32_t textureWidth = (int32_t)(ceilf(aPlacement->width * aPlacement->density));
+  int32_t textureHeight = (int32_t)(ceilf(aPlacement->height * aPlacement->density));
+
+  WidgetPtr widget;
+  VRLayerQuadPtr layer;
+  if (aPlacement->layer) {
+    layer = m.device->CreateQuadLayer(textureWidth, textureHeight);
+  }
+
+   if (layer) {
+    widget = Widget::Create(m.context, aHandle, layer, worldWidth);
+  } else {
+    widget = Widget::Create(m.context, aHandle, textureWidth, textureHeight, worldWidth);
+  }
+
   if (aPlacement->opaque) {
     m.rootOpaque->AddNode(widget->GetRoot());
   } else {
@@ -870,7 +881,6 @@ BrowserWorld::DrawWorld() {
     m.skybox->SetTransform(vrb::Matrix::Translation(headPosition));
   }
   m.rootTransparent->SortNodes([=](const NodePtr& a, const NodePtr& b) {
-    const float kMaxFloat = 9999999.0f;
     float da = DistanceToPlane(GetWidgetFromNode(a), headPosition, headDirection);
     float db = DistanceToPlane(GetWidgetFromNode(b), headPosition, headDirection);
     if (da < 0.0f) {
@@ -882,7 +892,6 @@ BrowserWorld::DrawWorld() {
     return da < db;
   });
   m.device->StartFrame();
-
   m.rootOpaque->SetTransform(m.device->GetReorientTransform());
   m.rootTransparent->SetTransform(m.device->GetReorientTransform());
 

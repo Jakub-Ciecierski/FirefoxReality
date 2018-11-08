@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Quad.h"
+#include "VRLayer.h"
+#include "VRLayerNode.h"
 #include "vrb/ConcreteClass.h"
 
 #include "vrb/Color.h"
@@ -22,6 +24,8 @@ namespace crow {
 
 struct Quad::State {
   vrb::CreationContextWeak context;
+  VRLayerQuadPtr layer;
+  VRLayerNodePtr layerNode;
   int32_t textureWidth;
   int32_t textureHeight;
   vrb::TogglePtr root;
@@ -44,9 +48,17 @@ struct Quad::State {
 
   void Initialize() {
     vrb::CreationContextPtr create = context.lock();
-    geometry = Quad::CreateGeometry(create, worldMin, worldMax);
     transform = vrb::Transform::Create(create);
-    transform->AddNode(geometry);
+    if (layer) {
+      textureWidth = layer->GetWidth();
+      textureHeight = layer->GetHeight();
+      layer->SetWorldSize(GetWorldWidth(), GetWorldHeight());
+      layerNode = VRLayerNode::Create(create, layer);
+      transform->AddNode(layerNode);
+    } else {
+      geometry = Quad::CreateGeometry(create, worldMin, worldMax);
+      transform->AddNode(geometry);
+    }
     root = vrb::Toggle::Create(create);
     root->AddNode(transform);
     if (scaleMode != ScaleMode::Fill) {
@@ -64,6 +76,9 @@ struct Quad::State {
 
   void UpdateVertexArray() {
     if (textureWidth == 0|| textureHeight == 0) {
+      return;
+    }
+    if (layer) {
       return;
     }
     vrb::VertexArrayPtr array = geometry->GetVertexArray();
@@ -126,10 +141,11 @@ struct Quad::State {
 };
 
 QuadPtr
-Quad::Create(vrb::CreationContextPtr aContext, const vrb::Vector& aMin, const vrb::Vector& aMax) {
+Quad::Create(vrb::CreationContextPtr aContext, const vrb::Vector& aMin, const vrb::Vector& aMax, const VRLayerQuadPtr& aLayer) {
   QuadPtr result = std::make_shared<vrb::ConcreteClass<Quad, Quad::State> >(aContext);
   result->m.worldMin = aMin;
   result->m.worldMax = aMax;
+  result->m.layer = aLayer;
   result->m.Initialize();
   return result;
 }
@@ -246,18 +262,17 @@ Quad::SetBackgroundColor(const vrb::Color& aColor) {
 
 void
 Quad::GetTextureSize(int32_t& aWidth, int32_t& aHeight) const {
-  if (aWidth == m.textureWidth && aHeight == m.textureHeight) {
-    return;
-  }
   aWidth = m.textureWidth;
   aHeight = m.textureHeight;
-  m.UpdateVertexArray();
 }
 
 void
 Quad::SetTextureSize(int32_t aWidth, int32_t aHeight) {
   m.textureWidth = aWidth;
   m.textureHeight = aHeight;
+  if (m.layer) {
+    m.layer->Resize(aWidth, aHeight);
+  }
 }
 
 void
@@ -307,13 +322,18 @@ Quad::SetWorldSize(const vrb::Vector& aMin, const vrb::Vector& aMax) const {
   m.worldMin = aMin;
   m.worldMax = aMax;
 
+  if (m.layer) {
+    m.layer->SetWorldSize(GetWorldWidth(), GetWorldHeight());
+  }
+
   m.UpdateVertexArray();
   m.LayoutBackground();
 }
 
 vrb::Vector
 Quad::GetNormal() const {
-  return m.geometry->GetVertexArray()->GetNormal(0);
+  const vrb::Vector bottomRight(m.worldMax.x(), m.worldMin.y(), m.worldMin.z());
+  return (bottomRight - m.worldMin).Cross(m.worldMax - m.worldMin).Normalize();
 }
 
 vrb::NodePtr

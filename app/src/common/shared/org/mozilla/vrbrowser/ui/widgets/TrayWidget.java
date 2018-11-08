@@ -109,7 +109,6 @@ public class TrayWidget extends UIWidget implements SessionStore.SessionChangeLi
         aPlacement.parentAnchorY = 0.5f;
         aPlacement.rotationAxisX = 1.0f;
         aPlacement.rotation = -45.0f;
-        aPlacement.opaque = false;
     }
 
     @Override

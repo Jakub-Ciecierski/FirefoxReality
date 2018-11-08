@@ -13,6 +13,7 @@ import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
@@ -65,6 +66,11 @@ public abstract class UIWidget extends FrameLayout implements Widget {
         mInitialWidth = mWidgetPlacement.width;
         mInitialHeight = mWidgetPlacement.height;
         mWorldWidth = WidgetPlacement.pixelDimension(getContext(), R.dimen.world_width);
+        // Transparent border useful for TimeWarp Layers and better aliasing.
+        int padding_dp = 1;  // 1 dps
+        final float scale = getResources().getDisplayMetrics().density;
+        int padding_px = (int) (padding_dp * scale + 0.5f);
+        this.setPadding(padding_px, padding_px, padding_px, padding_px);
 
         mChildren = new HashMap<>();
         mBackHandler = new Runnable() {
@@ -95,7 +101,18 @@ public abstract class UIWidget extends FrameLayout implements Widget {
     }
 
     @Override
-    public void resizeSurfaceTexture(final int aWidth, final int aHeight) {
+    public void setSurface(Surface aSurface, final int aWidth, final int aHeight) {
+        if (mRenderer != null) {
+            mRenderer.release();
+        }
+        if (aSurface != null) {
+            mRenderer = new UISurfaceTextureRenderer(aSurface, aWidth, aHeight);
+        }
+        setWillNotDraw(mRenderer == null);
+    }
+
+    @Override
+    public void resizeSurface(final int aWidth, final int aHeight) {
         if (mRenderer != null){
             mRenderer.resize(aWidth, aHeight);
         }

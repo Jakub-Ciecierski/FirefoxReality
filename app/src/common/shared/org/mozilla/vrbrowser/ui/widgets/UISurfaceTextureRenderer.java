@@ -29,13 +29,24 @@ class UISurfaceTextureRenderer {
         mSurface = new Surface(mSurfaceTexture);
     }
 
+    UISurfaceTextureRenderer(Surface aSurface, int aWidth, int aHeight) {
+        mTextureWidth = aWidth;
+        mTextureHeight = aHeight;
+        mSurface = aSurface;
+        mSurfaceCanvas = mSurface.lockCanvas(null);
+        mSurfaceCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        mSurface.unlockCanvasAndPost(mSurfaceCanvas);
+    }
+
     void resize(int aWidth, int aHeight) {
         if (aWidth == mTextureWidth && aHeight == mTextureHeight) {
             return;
         }
         mTextureWidth = aWidth;
         mTextureHeight = aHeight;
-        mSurfaceTexture.setDefaultBufferSize(aWidth, aHeight);
+        if (mSurfaceTexture != null) {
+            mSurfaceTexture.setDefaultBufferSize(aWidth, aHeight);
+        }
     }
 
     void release() {

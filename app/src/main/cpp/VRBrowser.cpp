@@ -12,6 +12,8 @@ namespace {
 
 static const char* kDispatchCreateWidgetName = "dispatchCreateWidget";
 static const char* kDispatchCreateWidgetSignature = "(ILandroid/graphics/SurfaceTexture;II)V";
+static const char* kDispatchCreateWidgetSFName = "dispatchCreateWidgetSF";
+static const char* kDispatchCreateWidgetSFSignature = "(ILandroid/view/Surface;II)V";
 static const char* kHandleMotionEventName = "handleMotionEvent";
 static const char* kHandleMotionEventSignature = "(IIZFF)V";
 static const char* kHandleScrollEventName = "handleScrollEvent";
@@ -42,6 +44,7 @@ static const char* kGetPointerColorSignature = "()I";
 static JNIEnv* sEnv;
 static jobject sActivity;
 static jmethodID sDispatchCreateWidget;
+static jmethodID sDispatchCreateWidgetSF;
 static jmethodID sHandleMotionEvent;
 static jmethodID sHandleScrollEvent;
 static jmethodID sHandleAudioPose;
@@ -75,6 +78,7 @@ VRBrowser::InitializeJava(JNIEnv* aEnv, jobject aActivity) {
   }
 
   sDispatchCreateWidget = FindJNIMethodID(sEnv, browserClass, kDispatchCreateWidgetName, kDispatchCreateWidgetSignature);
+  sDispatchCreateWidgetSF = FindJNIMethodID(sEnv, browserClass, kDispatchCreateWidgetSFName, kDispatchCreateWidgetSFSignature);
   sHandleMotionEvent = FindJNIMethodID(sEnv, browserClass, kHandleMotionEventName, kHandleMotionEventSignature);
   sHandleScrollEvent = FindJNIMethodID(sEnv, browserClass, kHandleScrollEventName, kHandleScrollEventSignature);
   sHandleAudioPose = FindJNIMethodID(sEnv, browserClass, kHandleAudioPoseName, kHandleAudioPoseSignature);
@@ -119,6 +123,15 @@ VRBrowser::DispatchCreateWidget(jint aWidgetHandle, jobject aSurface, jint aWidt
   sEnv->CallVoidMethod(sActivity, sDispatchCreateWidget, aWidgetHandle, aSurface, aWidth, aHeight);
   CheckJNIException(sEnv, __FUNCTION__);
 }
+
+
+void
+VRBrowser::DispatchCreateWidgetSF(jint aWidgetHandle, jobject aSurface, jint aWidth, jint aHeight) {
+  if (!ValidateMethodID(sEnv, sActivity, sDispatchCreateWidgetSF, __FUNCTION__)) { return; }
+  sEnv->CallVoidMethod(sActivity, sDispatchCreateWidgetSF, aWidgetHandle, aSurface, aWidth, aHeight);
+  CheckJNIException(sEnv, __FUNCTION__);
+}
+
 
 void
 VRBrowser::HandleMotionEvent(jint aWidgetHandle, jint aController, jboolean aPressed, jfloat aX, jfloat aY) {
